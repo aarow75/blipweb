@@ -1,0 +1,358 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>vkeysweb [beta]: patch editing and sharing for Volca Bass</title>
+  <meta name="description" content="Volca Bass Web MIDI Patch Editor">
+  <meta name="author" content="Factotumo">
+
+  <link href="./s.css" rel="stylesheet">
+  <link href="./jquery-ui.css" rel="stylesheet">
+  <style>
+  #bass #lfo {
+  	float:left;
+  }
+  #oscillators {
+  	float: none;
+  }
+  #bass {
+  	background-color: silver;
+  }
+  </style>
+  <script src="./jquery-2.1.4.js" type="text/javascript"></script>
+  <script src="./jsrender.js" type="text/javascript"></script>
+  <script src="./jquery.knob.min.js" type="text/javascript"></script>
+  <script src="./jquery-ui.min.js" type="text/javascript"></script>
+  <script src="./index.js" type="text/javascript"></script>
+  <script>
+  var bassToCCs = {
+      "lfo_rate": 41,
+      "lfo_cutoff_int": 42,
+      "pitch1", 43,
+      "pitch2", 44,
+      "pitch3", 45,
+      "eg_attack": 46,
+      "eg_decay": 47,
+      "cutoff_eg_int": 48,
+      "gatey_time": 49,
+      "portamento": 5
+  };
+  </script>
+</head>
+
+<body id="bass">
+
+  <div id="container">
+  
+  <p><b>vbassweb [beta]</b>: patch editing and sharing for Volca Bass.
+  <a href="./keys.html">Volca Keys</a>
+  <form id="editor" name="editor">
+  
+  <div id="controlBar">
+  <b>MIDI: ports</b>
+  <select name="port" id="port">
+    <option value="none">none</option>
+  </select>
+  
+  <b>channels</b>
+  <select name="channel" id="channel">
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4" selected>4</option>
+	<option value="5">5</option>
+  </select>
+  &nbsp;
+  <input type="submit" id="send" name="send" value="send to Volca" class="controlButton" />
+  <input type="submit" id="share" name="share" value="get patch link" class="controlButton" />
+  <input type="submit" id="surprise" name="surprise" value="surprise me!" class="controlButton" />
+
+  <div id="shareUrl" title="link for current settings" style="display:none">&nbsp;</div>
+  </div>  
+
+
+  <div id="envelope" class="knobGroup">
+    <h2>envelope</h2>
+    <div class="knobLabelPair">
+      
+      <h3>EG attack</h3>
+      <input name="eg_attack" type="text" class="dial" value="0" />
+      
+    </div>
+    <div class="knobLabelPair">
+      
+      <h3>EG decay</h3>
+      <input name="eg_decay" type="text" class="dial" value="64" />
+      
+    </div>
+    <div class="knobLabelPair">
+      
+      <h3>Cutoff EG Int.</h3>
+      <input name="cutoff_eg_int" type="text" class="dial" value="64" />
+      
+    </div>
+  </div>
+
+
+  <div id="lfo" class="knobGroup">
+    <h2>LFO</h2>
+    <div class="knobLabelPair">
+      
+      <h3>Rate</h3>
+      <input name="lfo_rate" type="text" class="dial" value="0" />
+      
+    </div>
+
+    <div class="knobLabelPair">
+      <h3>Depth</h3>
+      <input name="lfo_cutoff_int" type="text" class="dial" value="64" />
+    </div>
+
+  </div>
+
+  <div id="effects" class="knobGroup">
+    <h2>Gate</h2>
+<div id="gate_time" class="knobLabelPair">
+      <h3>Gate Time</h3>
+      <input type="radio" id="lDest1" name="gate_time" value="0" /><label for="lDest1">off</label>
+      <input type="radio" id="lDest2" name="gate_time" checked="checked" value="127" /><label for="lDest2">on</label>
+
+    </div> 
+    
+
+
+  </div>
+  <div class="clear">&nbsp;</div>
+
+  <div id="oscillators" class="knobGroup">
+    <h2>oscillators</h2>
+
+    <div class="knobLabelPair">
+      <h3>Pitch 1</h3>
+      <input name="pitch1" type="text" class="dial" value="0" />
+    </div>
+
+    <div id="pitch2" class="knobLabelPair">
+      <h3>Pitch 2</h3>
+      <input type="text" class="dial" name="pitch2" value="64">    
+    </div>
+
+    <div id="pitch3" class="knobLabelPair">
+      <h3>Pitch 3</h3>
+      <input type="text" class="dial" name="pitch3" value="127">    
+    </div>
+
+    <div id="portamento" class="knobLabelPair">
+      <h3>Slide Time</h3>
+      <input type="text" class="dial" name="portamento" value="0">    
+    </div>   
+    
+  </div>
+
+  
+  </form>
+
+  <div class="clear">
+  <p style="text-align:right;margin:0 5% 0 0;">find source code / report issues at <a href="https://github.com/aarow75/blipweb">github</a></p>
+  </div>
+  
+  </div>
+  
+<script type="text/javascript">
+
+    var uri = document.documentURI;
+    var queryIdx = uri.indexOf("?");
+    if (queryIdx != -1) {
+      var query = uri.substr(queryIdx+1, uri.length-1);
+      var nameValPairs = query.split("&");
+      for (var i = 0; i < nameValPairs.length; i++) {
+        var nameValue = nameValPairs[i].split("=");
+        //console.log(nameValue);
+        document.forms["editor"].elements[nameValue[0]].value = nameValue[1];
+      }
+    }
+
+    $(function() {
+        $(".dial").knob(
+          {
+              'min':0,
+              'max':127,
+              'width': '70',
+              'height': '100',
+              'cursor': false,
+              'thickness': .3,
+              'angleOffset': -150,
+              'angleArc': 300,
+              'fgColor': '#222222'
+          }
+        );
+        $("input[name='voice']").knob(
+          {
+              'min':0,
+              'max':127,
+              'step': 16,
+              'width': '70',
+              'height': '100',
+              'cursor': false,
+              'thickness': .3,
+              'angleOffset': -150,
+              'angleArc': 300,
+              'fgColor': '#222222',
+              'format': function(v) {
+                if (v > 127) {
+                  return 127;
+                } else {
+                  return v;
+                }
+              }
+          }
+        );
+
+        $("#sustain").buttonset();
+        $("#octave").buttonset();
+        $("#gate_time").buttonset();
+        $("#pwmSweep").buttonset();
+        $("#lRand").buttonset();
+        $("#lNoteRetrig").buttonset();
+        $("#oscBWave").buttonset();
+        
+        $("editor").keypress(
+          function(e) {
+            if (e.which == 13) {
+              $("#send").click();
+              return false;
+            }
+          }
+        );
+
+        $("#send").button().click(
+          function(event) {
+            //console.log(event);
+            var f = document.forms["editor"];
+
+            var selectedPort = f.elements["port"][f.elements["port"].selectedIndex];
+            var selectedChannel = parseInt(f.elements["channel"][f.elements["channel"].selectedIndex].text);
+            var status = 176 + (selectedChannel - 1);
+
+            if (midi.outputs[selectedPort.text] === undefined) {
+              alert("sorry. \"" + selectedPort.text + "\" isn't a valid MIDI port.");
+              return false;
+            }
+
+            var midiOut = midi.outputs[selectedPort.text];
+            console.log("MIDI out: " + midiOut.name);
+            
+
+            for (var i = 0; i < f.elements.length; i++) {
+                var e = f.elements[i];
+                if (bassToCCs[e.name] === undefined) {
+                  continue;
+                }
+                if (e.type == "radio") {
+                  if (!e.checked) { // skip unchecked radio button options
+                    continue;
+                  }
+                }
+                var ccNum = bassToCCs[e.name];
+                var val = e.value;
+                console.log(e.name + ": [" + status + ", " + ccNum + ", " + val + "]");
+
+                midiOut.send([status, ccNum, val]);
+            }
+
+            return false;
+          }
+        );
+
+        $("#share").button().click(
+          function(event) {
+            var params = "?";
+            //console.log(event);
+            var f = document.forms["editor"];
+            for (var i = 0; i < f.elements.length; i++) {
+                var e = f.elements[i];
+                if (bassToCCs[e.name] === undefined) {
+                  continue;
+                }
+                if (e.type == "radio") {
+                  if (!e.checked) {
+                    continue;
+                  }
+                }
+                var val = e.value;
+                params += e.name+"="+e.value+"&";
+            }
+            params = params.substr(0, params.length - 1);
+            
+
+            var uri = document.documentURI;
+            var queryStart = uri.indexOf("?")
+            if (queryStart != -1) {
+              uri = uri.substr(0, queryStart);
+            }
+
+            var shareUrl = uri + params;
+            //console.log(shareUrl);
+
+            $("#shareUrl").empty();
+            $("#shareUrl").dialog({
+              width: 760,
+              height: 140,
+              modal: true,
+              position: { my: "center top", at: "left bottom", of: $("#share") }
+            }).append('<p><b><a href="' + shareUrl + '">patch link</a></b> &lt;&lt; bookmark to save, copy to share</p><p>raw URL &gt;&gt; <i>'+ shareUrl + '</i></p>');
+            
+
+            return false;
+          }
+        );
+
+        $("#surprise").button().click(
+            function(event) {
+                var f = document.forms["editor"];
+                for (var param in bassToCCs) {
+                    var rand = Math.floor((Math.random() * 128));
+                    var e = f.elements[param];
+                    console.log(param + "=" + rand);                    
+                    if (e.length > 1) { // undefined for scalar form inputs
+                      for (var j = 0; j < e.length; j++) {
+                        var radioInput = e[j];
+                        if (rand < 64) {
+                          if (updateSwitch(radioInput, param, 0)) {
+                            break; // save 1 iteration when rand is for off position since "0" radio button is always first in the list
+                          }
+                        } else {
+                          if (updateSwitch(radioInput, param, 127)) {
+                            break;
+                          }
+                        }
+                      }
+                    } else {
+                      e.value = rand;
+                      $("input[name='" + param + "']").trigger("change");
+                    }
+
+                }
+                return false;
+            }
+        );
+
+        //$("#ports").selectmenu();
+    });
+
+    function updateSwitch(radioInput, paramName, onOrOff) {
+      if (radioInput.value == onOrOff) {
+        radioInput.checked = true;
+        $("#"+paramName).buttonset("refresh");
+        //console.log("set");
+        return 1;
+      }
+      //console.log("skip");
+      return 0;
+    }
+</script>
+  
+</body>
+</html>
